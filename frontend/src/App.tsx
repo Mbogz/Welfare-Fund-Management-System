@@ -8,6 +8,9 @@ import AdminMembers from './pages/admin/Members';
 import AddMember from './pages/admin/AddMember';
 import AdminContributions from './pages/admin/Contributions';
 import CreditRating from './pages/admin/CreditRating';
+import MemberDashboard from './pages/member/Dashboard';
+import PaymentBot from './pages/member/PaymentBot';
+import MemberTransactions from './pages/member/Transactions';
 
 function App() {
   return (
@@ -35,6 +38,13 @@ function App() {
         <Route path="/admin/contributions" element={<AdminContributions />} />
 
         <Route path="/admin/credit-rating" element={<CreditRating />} />
+
+        {/* Member Routes */}
+        <Route path="/member" element={<MemberDashboard />} />
+
+        <Route path="/member/payment-bot" element={<PaymentBot />} />
+
+        <Route path="/member/transactions" element={<MemberTransactions />} />
 
       </Routes>
     </Router>
