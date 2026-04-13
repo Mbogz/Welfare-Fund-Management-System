@@ -10,7 +10,7 @@ import {
   UserCircle, 
   ShieldCheck,
   LogOut,
-  Bot
+  Bot // Added this missing import
 } from 'lucide-react';
 
 const Layout = ({ children, role }: { children: React.ReactNode, role: 'super-admin' | 'admin' | 'member' }) => {
@@ -28,6 +28,7 @@ const Layout = ({ children, role }: { children: React.ReactNode, role: 'super-ad
         </div>
         
         <nav className="space-y-1.5 flex-1">
+          {/* Dashboard Link - Shared by all but goes to different paths */}
           <Link 
             to={role === 'super-admin' ? '/super-admin' : role === 'admin' ? '/admin' : '/member'} 
             className={`flex items-center gap-3 w-full p-3 rounded-xl font-medium transition-all ${
@@ -39,6 +40,7 @@ const Layout = ({ children, role }: { children: React.ReactNode, role: 'super-ad
             <LayoutDashboard size={20} /> Dashboard
           </Link>
           
+          {/* Super Admin Specific Links */}
           {role === 'super-admin' && (
             <>
               <Link to="/super-admin/groups" className={`flex items-center gap-3 w-full p-3 rounded-xl font-medium ${isActive('/super-admin/groups') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
@@ -50,6 +52,7 @@ const Layout = ({ children, role }: { children: React.ReactNode, role: 'super-ad
             </>
           )}
 
+          {/* Admin Specific Links */}
           {role === 'admin' && (
             <>
               <Link to="/admin/members" className={`flex items-center gap-3 w-full p-3 rounded-xl font-medium ${isActive('/admin/members') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
@@ -66,16 +69,26 @@ const Layout = ({ children, role }: { children: React.ReactNode, role: 'super-ad
               </Link>
             </>
           )}
+
+          {/* Member Specific Links - FIXED HERE */}
+          {role === 'member' && (
+            <>
+              <Link to="/member/transactions" className={`flex items-center gap-3 w-full p-3 rounded-xl font-medium ${isActive('/member/transactions') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+                <Receipt size={20} /> Transactions
+              </Link>
+              <Link to="/member/payment-bot" className={`flex items-center gap-3 w-full p-3 rounded-xl font-medium ${isActive('/member/payment-bot') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+                <Bot size={20} /> Payment Bot
+              </Link>
+            </>
+          )}
         </nav>
 
         <div className="border-t border-gray-100 pt-4">
-          {/* Only show Profile link for Super Admin now */}
           {role === 'super-admin' && (
             <Link to="/super-admin/profile" className={`flex items-center gap-3 w-full p-3 rounded-xl font-medium ${isActive('/super-admin/profile') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
               <UserCircle size={20} /> Profile
             </Link>
           )}
-          
           <button className="flex items-center gap-3 w-full p-3 text-red-500 hover:bg-red-50 rounded-xl font-medium mt-1">
             <LogOut size={20} /> Logout
           </button>
