@@ -1,91 +1,71 @@
 import React, { useState } from 'react';
 import Layout from '../../components/Layout';
-import { Send, Bot, User, Sparkles } from 'lucide-react';
+import { Wallet, Phone, Landmark, ArrowRight } from 'lucide-react';
 
 const PaymentBot = () => {
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Hello! I'm your WelfareFund Assistant. How can I help you with your payments today?", sender: 'bot' }
-  ]);
-  const [input, setInput] = useState("");
-
-  const handleSend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    const userMsg = { id: Date.now(), text: input, sender: 'user' };
-    setMessages(prev => [...prev, userMsg]);
-    setInput("");
-
-    // Simple mock response logic
-    setTimeout(() => {
-      let botResponse = "I'm analyzing your request. For now, remember our Paybill is 400200.";
-      if (input.toLowerCase().includes("pay")) {
-        botResponse = "To make a payment, use M-Pesa Paybill 400200. Use your Phone Number as the Account Number.";
-      }
-      setMessages(prev => [...prev, { id: Date.now() + 1, text: botResponse, sender: 'bot' }]);
-    }, 1000);
-  };
+  const groupMpesa = { paybill: "400200", account: "GROUP_ACCOUNT_NAME" };
+  const [amount, setAmount] = useState("");
 
   return (
     <Layout role="member">
-      <div className="max-w-3xl mx-auto h-[calc(100vh-160px)] flex flex-col">
-        <header className="mb-6 flex items-center gap-3">
-          <div className="bg-blue-600 p-2 rounded-lg text-white">
-            <Bot size={24} />
+      <div className="max-w-lg mx-auto mt-12">
+        <div className="bg-white rounded-[2.5rem] p-10 border border-gray-100 shadow-xl">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+              <Wallet size={28} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-gray-900 italic">Deposit Funds</h2>
+              <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Contribute to the group</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Payment Assistant</h1>
-            <p className="text-sm text-green-600 flex items-center gap-1">
-              <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Online & Ready
-            </p>
-          </div>
-        </header>
 
-        {/* Chat Area */}
-        <div className="flex-1 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] p-4 rounded-2xl flex gap-3 ${
-                  msg.sender === 'user' 
-                    ? 'bg-blue-600 text-white rounded-tr-none' 
-                    : 'bg-gray-100 text-gray-800 rounded-tl-none'
-                }`}>
-                  {msg.sender === 'bot' && <Bot size={18} className="shrink-0 mt-1 opacity-70" />}
-                  <p className="text-sm leading-relaxed">{msg.text}</p>
-                </div>
-              </div>
+          <div className="grid grid-cols-4 gap-3 mb-8">
+            {[100, 200, 500, 1000].map((val) => (
+              <button 
+                key={val} 
+                onClick={() => setAmount(val.toString())} 
+                className="bg-gray-50 py-4 rounded-2xl font-black text-gray-700 hover:bg-blue-600 hover:text-white transition-all text-sm border border-gray-100 shadow-sm"
+              >
+                +{val}
+              </button>
             ))}
           </div>
 
-          {/* Input Area */}
-          <form onSubmit={handleSend} className="p-4 border-t border-gray-50 bg-gray-50/50 flex gap-2">
-            <input 
-              type="text" 
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about Paybill, deadlines, or status..."
-              className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            />
-            <button 
-              type="submit"
-              className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-100"
-            >
-              <Send size={20} />
+          <div className="space-y-8">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Amount to Deposit</label>
+              <div className="relative">
+                <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-gray-400 text-xl">KES</span>
+                <input 
+                  type="number" 
+                  value={amount} 
+                  onChange={(e) => setAmount(e.target.value)} 
+                  placeholder="0.00" 
+                  className="bg-gray-50 w-full pl-16 pr-6 py-5 rounded-2xl border-2 border-transparent focus:border-blue-400 focus:bg-white outline-none text-2xl font-black text-gray-900 transition-all shadow-inner" 
+                />
+              </div>
+            </div>
+
+            <div className="bg-green-50/50 p-6 rounded-[2rem] border border-green-100 space-y-4 shadow-sm">
+              <div className="flex justify-between items-center border-b border-green-100 pb-4">
+                <span className="text-[10px] font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
+                  <Landmark size={14} /> M-Pesa Paybill
+                </span>
+                <span className="font-mono font-black text-green-900 text-lg">{groupMpesa.paybill}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-[10px] font-black text-green-700 uppercase tracking-widest flex items-center gap-2">
+                  <Phone size={14} /> Account Name
+                </span>
+                <span className="font-mono font-black text-green-900 text-sm truncate ml-4">{groupMpesa.account}</span>
+              </div>
+            </div>
+
+            <button className="w-full py-5 bg-blue-600 hover:bg-blue-700 text-white font-black text-lg rounded-2xl shadow-xl shadow-blue-100 transition-all active:scale-95 flex items-center justify-center gap-3">
+              Process Deposit <ArrowRight size={20} />
             </button>
-          </form>
-        </div>
-        
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-          {["What is the Paybill?", "Check my deadline", "How to pay cash?"].map((suggestion) => (
-            <button 
-              key={suggestion}
-              onClick={() => setInput(suggestion)}
-              className="whitespace-nowrap bg-white border border-gray-200 px-4 py-2 rounded-full text-xs font-medium text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-all"
-            >
-              {suggestion}
-            </button>
-          ))}
+          </div>
         </div>
       </div>
     </Layout>

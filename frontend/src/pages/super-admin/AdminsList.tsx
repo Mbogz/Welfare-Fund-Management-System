@@ -1,98 +1,75 @@
 import React, { useState } from 'react';
 import Layout from '../../components/Layout';
-import { Search, Trash2, Users, Info, X, AlertTriangle } from 'lucide-react';
+import { 
+  Trash2, 
+  ShieldCheck, 
+  X, 
+  AlertTriangle, 
+  Mail, 
+  User, 
+  Building2
+} from 'lucide-react';
 
-const GroupsInfo = () => {
-  const [selectedGroup, setSelectedGroup] = useState<any>(null);
-  
-  // NEW STATE: Tracks the group ID about to be deleted.
-  // When this is null, the modal is closed.
-  const [groupToDelete, setGroupToDelete] = useState<number | null>(null);
-
-  // Mock data expanded with descriptions and members
-  const [groups, setGroups] = useState([
-    { 
-      id: 1, 
-      name: "Nairobi Tech Savings Group", 
-      membersCount: 24, 
-      admin: "Alice Wambui",
-      description: "A collective of software engineers saving for long-term investment in tech startups and real estate.",
-      members: [
-        { name: "David Kimani", email: "david@example.com", phone: "+254 711 000 111" },
-        { name: "Sarah Omolo", email: "sarah@example.com", phone: "+254 722 000 222" },
-        { name: "Kevin Mutua", email: "kevin@example.com", phone: "+254 733 000 333" }
-      ]
-    },
-    { 
-      id: 2, 
-      name: "Mombasa Traders Welfare", 
-      membersCount: 15, 
-      admin: "John Doe",
-      description: "Logistics and trade professionals focusing on short-term credit facilities for import/export duties.",
-      members: [
-        { name: "John Doe", email: "john@example.com", phone: "+254 744 000 444" }
-      ]
-    }
+const AdminList = () => {
+  // Mock data for Admin management
+  const [admins, setAdmins] = useState([
+    { id: 1, name: "David Kimani", email: "david@truthgroup.com", assignedGroup: "Truth Savings", role: "Primary Admin", joined: "Jan 2026" },
+    { id: 2, name: "Sarah Omolo", email: "sarah@nairobytech.com", assignedGroup: "Nairobi Tech", role: "Treasurer", joined: "Feb 2026" },
+    { id: 3, name: "John Doe", email: "john@pioneers.com", assignedGroup: "Pioneer Welfare", role: "Secretary", joined: "Mar 2026" },
   ]);
 
-  // Updated function to open the custom modal instead of a prompt
-  const initiateDelete = (id: number) => {
-    setGroupToDelete(id);
-  };
+  const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
+  const [adminToDelete, setAdminToDelete] = useState<any>(null);
 
-  // Function to finalize deletion
-  const finalizeDelete = () => {
-    if (groupToDelete) {
-      setGroups(groups.filter(g => g.id !== groupToDelete));
-      if (selectedGroup?.id === groupToDelete) setSelectedGroup(null);
-      setGroupToDelete(null); // Close the modal
-    }
-  };
-
-  // Function to find group name for modal
-  const getGroupToDeleteName = () => {
-    return groups.find(g => g.id === groupToDelete)?.name;
+  const handleDelete = (id: number) => {
+    setAdmins(admins.filter(admin => admin.id !== id));
+    setAdminToDelete(null);
+    setSelectedAdmin(null);
   };
 
   return (
     <Layout role="super-admin">
-      <div className="max-w-7xl mx-auto flex gap-6">
+      <div className="flex gap-6 relative max-w-6xl mx-auto">
+        
         {/* Main List Section */}
-        <div className={`transition-all duration-300 ${selectedGroup ? 'w-1/2' : 'w-full'}`}>
-          <header className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">Registered Groups</h1>
-            <p className="text-gray-500">Monitor and manage all welfare groups on the platform.</p>
-          </header>
+        <div className={`transition-all duration-300 ${selectedAdmin ? 'w-2/3' : 'w-full'}`}>
+          <div className="mb-8">
+            <h1 className="text-3xl font-black text-gray-900 tracking-tight italic">Administrators</h1>
+            <p className="text-sm text-gray-500 font-medium border-l-4 border-blue-500 pl-4">Management of system-wide administrative assignments</p>
+          </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-100">
+          <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+            <table className="w-full text-left border-collapse">
+              <thead className="bg-gray-50/50 border-b border-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">Group Name</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">Members</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-right">Action</th>
+                  <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Admin Name</th>
+                  <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Assigned Group</th>
+                  <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-widest text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {groups.map((group) => (
+                {admins.map((admin) => (
                   <tr 
-                    key={group.id} 
-                    className={`cursor-pointer transition-colors ${selectedGroup?.id === group.id ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
-                    onClick={() => setSelectedGroup(group)}
+                    key={admin.id} 
+                    onClick={() => setSelectedAdmin(admin)}
+                    className={`cursor-pointer transition-all ${selectedAdmin?.id === admin.id ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
                   >
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-gray-900">{group.name}</p>
-                      <p className="text-xs text-gray-500">Admin: {group.admin}</p>
+                    <td className="px-8 py-5 font-bold text-gray-900">
+                      {admin.name}
                     </td>
-                    <td className="px-6 py-4 text-gray-600 text-sm">{group.membersCount}</td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-2 text-blue-600 font-semibold text-sm">
+                        <Building2 size={14} />
+                        {admin.assignedGroup}
+                      </div>
+                    </td>
+                    <td className="px-8 py-5 text-right">
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
-                          initiateDelete(group.id); // Open custom modal
+                          setAdminToDelete(admin);
                         }}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete Group"
+                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                       >
                         <Trash2 size={18} />
                       </button>
@@ -104,86 +81,85 @@ const GroupsInfo = () => {
           </div>
         </div>
 
-        {/* Detail Panel */}
-        {selectedGroup && (
-          <div className="w-1/2 bg-white rounded-3xl border border-gray-100 shadow-xl p-8 sticky top-8 h-fit animate-in slide-in-from-right-4 duration-300">
-            <div className="flex justify-between items-start mb-6">
-              <div className="bg-blue-100 p-3 rounded-2xl text-blue-600">
-                <Users size={24} />
+        {/* Admin Detail Card */}
+        {selectedAdmin && (
+          <div className="w-1/3 bg-white rounded-[2.5rem] border border-gray-100 shadow-2xl p-8 sticky top-8 h-fit animate-in slide-in-from-right-8 duration-500">
+            <button 
+              onClick={() => setSelectedAdmin(null)}
+              className="absolute top-6 right-6 p-2 text-gray-400 hover:bg-gray-50 rounded-full transition-all"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="flex flex-col items-center text-center mb-8">
+              <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center text-white shadow-lg mb-4">
+                <ShieldCheck size={40} />
               </div>
-              <button 
-                onClick={() => setSelectedGroup(null)}
-                className="p-2 hover:bg-gray-100 rounded-full text-gray-400"
-              >
-                <X size={20} />
-              </button>
+              <h2 className="text-2xl font-black text-gray-900 leading-tight">{selectedAdmin.name}</h2>
+              <p className="text-xs font-bold text-blue-500 uppercase tracking-widest mt-1">{selectedAdmin.role}</p>
             </div>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedGroup.name}</h2>
+            <div className="space-y-5 pt-6 border-t border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400">
+                  <Mail size={18} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Email Address</p>
+                  <p className="text-sm font-bold text-gray-700">{selectedAdmin.email}</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400">
+                  <Building2 size={18} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Managing Group</p>
+                  <p className="text-sm font-bold text-gray-700">{selectedAdmin.assignedGroup}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400">
+                  <User size={18} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">Member Since</p>
+                  <p className="text-sm font-bold text-gray-700">{selectedAdmin.joined}</p>
+                </div>
+              </div>
+            </div>
             
-            <div className="mb-8">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-                <Info size={14} /> Description
-              </h3>
-              <p className="text-gray-600 leading-relaxed text-sm bg-gray-50 p-4 rounded-xl">
-                {selectedGroup.description}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Group Members</h3>
-              <div className="space-y-3">
-                {selectedGroup.members.map((m: any, idx: number) => (
-                  <div key={idx} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-blue-100 transition-colors">
-                    <div>
-                      <p className="font-bold text-sm text-gray-900">{m.name}</p>
-                      <p className="text-xs text-gray-500">{m.email}</p>
-                    </div>
-                    <p className="text-xs font-mono text-gray-400">{m.phone}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* The "View Group Dashboard" button has been removed from here */}
           </div>
         )}
       </div>
 
-      {/* ========================================= */}
-      {/* CUSTOM DELETION CONFIRMATION MODAL CARD */}
-      {/* ========================================= */}
-      {groupToDelete !== null && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 w-full max-w-lg p-10 animate-in zoom-in duration-300">
-            <div className="flex flex-col items-center text-center">
-              {/* Critical Icon Section */}
-              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center text-red-600 mb-6 border-4 border-red-50">
-                <AlertTriangle size={40} />
-              </div>
-
-              {/* Text Context */}
-              <h2 className="text-2xl font-extrabold text-gray-950 tracking-tight">System Confirmation Required</h2>
-              <p className="text-gray-600 mt-4 leading-relaxed px-2">
-                You are initiating the complete deletion of the group <strong className="text-red-700">{getGroupToDeleteName()}</strong>.
-              </p>
-              <p className="text-red-700 bg-red-50 font-bold p-4 rounded-2xl mt-6 text-sm flex items-center gap-2 border border-red-100">
-                <AlertTriangle size={16} /> This action cannot be undone, and all associated member access will be severed immediately.
-              </p>
-              
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-4 w-full mt-10 pt-8 border-t border-gray-100">
-                <button 
-                  onClick={() => setGroupToDelete(null)}
-                  className="w-full text-center py-4 rounded-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={finalizeDelete}
-                  className="w-full bg-red-600 text-white py-4 rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-100"
-                >
-                  Yes, Delete Entirely
-                </button>
-              </div>
+      {/* Delete Confirmation Modal */}
+      {adminToDelete && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[3rem] max-w-sm w-full p-10 text-center shadow-2xl animate-in zoom-in">
+            <div className="bg-red-50 w-20 h-20 rounded-full flex items-center justify-center text-red-600 mx-auto mb-6">
+              <AlertTriangle size={40} />
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 italic">Revoke Access?</h3>
+            <p className="text-gray-500 text-sm mt-4 leading-relaxed">
+              This will remove <span className="font-bold text-gray-900">{adminToDelete.name}</span> from managing {adminToDelete.assignedGroup}.
+            </p>
+            <div className="grid grid-cols-2 gap-4 mt-10">
+              <button 
+                onClick={() => setAdminToDelete(null)}
+                className="py-4 font-bold text-gray-400 hover:bg-gray-50 rounded-2xl transition-all"
+              >
+                Go Back
+              </button>
+              <button 
+                onClick={() => handleDelete(adminToDelete.id)}
+                className="py-4 bg-red-600 text-white rounded-2xl font-bold shadow-lg shadow-red-100 hover:bg-red-700 transition-all"
+              >
+                Confirm
+              </button>
             </div>
           </div>
         </div>
@@ -192,4 +168,4 @@ const GroupsInfo = () => {
   );
 };
 
-export default GroupsInfo;
+export default AdminList;

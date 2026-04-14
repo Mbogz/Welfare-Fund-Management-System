@@ -11,6 +11,7 @@ import CreditRating from './pages/admin/CreditRating';
 import MemberDashboard from './pages/member/Dashboard';
 import PaymentBot from './pages/member/PaymentBot';
 import MemberTransactions from './pages/member/Transactions';
+import MemberHome from './pages/member/Home';
 
 function App() {
   return (
@@ -45,6 +46,8 @@ function App() {
         <Route path="/member/payment-bot" element={<PaymentBot />} />
 
         <Route path="/member/transactions" element={<MemberTransactions />} />
+
+        <Route path="/member/home" element={<MemberHome />} />
 
       </Routes>
     </Router>
