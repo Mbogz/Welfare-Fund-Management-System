@@ -1,75 +1,147 @@
-import React, { useState } from 'react';
-import Layout from '../../components/Layout';
-import { Trash2, User, X, AlertTriangle, Calendar, Phone } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabaseClient';
+import { Users, ShieldAlert, ShieldCheck, RefreshCw, Search } from 'lucide-react';
 
-const MembersList = () => {
-  const [selectedMember, setSelectedMember] = useState<any>(null);
-  const [memberToDelete, setMemberToDelete] = useState<any>(null);
-  const [members, setMembers] = useState([
-    { id: 1, name: "David Kimani", email: "david@example.com", phone: "+254 711 000 111", joinedDate: "Jan 12, 2026" },
-    { id: 2, name: "Sarah Omolo", email: "sarah@example.com", phone: "+254 722 000 222", joinedDate: "Feb 05, 2026" },
-  ]);
+interface MemberProfile {
+  id: string;
+  full_name: string;
+  phone_number: string;
+  role: 'admin' | 'member';
+  joined_at: string;
+}
+
+export default function AdminMembers() {
+  const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  // Core data fetching function from Supabase
+  const fetchMembers = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: supabaseError } = await supabase
+        .from('profiles')
+        .select('id, full_name, phone_number, role, joined_at')
+        .order('joined_at', { ascending: false });
+
+      if (supabaseError) throw supabaseError;
+      setMembers(data || []);
+    } catch (err: any) {
+      setError(err.message || 'Failed to retrieve group members.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMembers();
+  }, []);
+
+  // Filter members based on search bar input
+  const filteredMembers = members.filter(member =>
+    member.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    member.phone_number?.includes(searchQuery)
+  );
 
   return (
-    <Layout role="admin">
-      <div className="flex gap-6 relative">
-        <div className={`transition-all duration-300 ${selectedMember ? 'w-2/3' : 'w-full'}`}>
-          <h1 className="text-2xl font-bold mb-6 text-gray-900">Group Members</h1>
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">Member Name</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {members.map((member) => (
-                  <tr key={member.id} onClick={() => setSelectedMember(member)} className="cursor-pointer hover:bg-gray-50">
-                    <td className="px-6 py-4 font-bold text-gray-900">{member.name}</td>
-                    <td className="px-6 py-4 text-right">
-                      <button onClick={(e) => { e.stopPropagation(); setMemberToDelete(member); }} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mt-6">
+      {/* Table Action Header Block */}
+      <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gray-50/50">
+        <div className="flex items-center space-x-3">
+          <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
+            <Users className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">Group Registration Ledger</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Authorized users allowed to register accounts and track transactions.</p>
           </div>
         </div>
 
-        {/* Member Detail Card */}
-        {selectedMember && (
-          <div className="w-1/3 bg-white rounded-3xl border border-gray-100 shadow-xl p-8 sticky top-8 h-fit animate-in slide-in-from-right-4">
-            <button onClick={() => setSelectedMember(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X size={20} /></button>
-            <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center text-white mb-6"><User size={32} /></div>
-            <h2 className="text-2xl font-bold text-gray-900">{selectedMember.name}</h2>
-            <p className="text-gray-500 text-sm mb-6">{selectedMember.email}</p>
-            <div className="space-y-4 pt-6 border-t border-gray-50">
-              <div className="flex items-center gap-3 text-gray-600"><Calendar size={18} /> <span>Joined {selectedMember.joinedDate}</span></div>
-              <div className="flex items-center gap-3 text-gray-600"><Phone size={18} /> <span>{selectedMember.phone}</span></div>
-            </div>
+        <div className="flex items-center gap-3">
+          {/* Realtime Search Bar */}
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name or mobile..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-2 w-full text-sm bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+            />
           </div>
-        )}
+
+          {/* Sync Refresh Action Button */}
+          <button
+            onClick={fetchMembers}
+            disabled={loading}
+            className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors disabled:opacity-50"
+            title="Refresh Ledger"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin text-indigo-600' : ''}`} />
+          </button>
+        </div>
       </div>
 
-      {/* Delete Confirmation Card */}
-      {memberToDelete && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-8 text-center animate-in zoom-in">
-            <div className="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center text-red-600 mx-auto mb-4"><AlertTriangle size={32} /></div>
-            <h3 className="text-xl font-bold">Remove Member?</h3>
-            <p className="text-gray-500 text-sm mt-2">This will remove {memberToDelete.name} and their contribution records from this group.</p>
-            <div className="grid grid-cols-2 gap-4 mt-8">
-              <button onClick={() => setMemberToDelete(null)} className="py-3 font-bold text-gray-500 hover:bg-gray-50 rounded-xl">Cancel</button>
-              <button className="py-3 bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-100">Confirm</button>
-            </div>
+      {/* Main Table Interface Layout View */}
+      <div className="overflow-x-auto">
+        {loading ? (
+          <div className="text-center py-12 text-sm text-gray-500">
+            <RefreshCw className="h-8 w-8 animate-spin mx-auto text-indigo-500 mb-2" />
+            Synchronizing records with secure cloud storage engine...
           </div>
-        </div>
-      )}
-    </Layout>
+        ) : error ? (
+          <div className="p-6 text-center text-sm text-red-600 bg-red-50/50 rounded-b-xl">
+            {error}
+          </div>
+        ) : filteredMembers.length === 0 ? (
+          <div className="text-center py-16 text-gray-400">
+            <Users className="h-12 w-12 mx-auto text-gray-300 mb-3" />
+            <p className="text-base font-medium">No records matching parameters found</p>
+            <p className="text-xs mt-1 text-gray-400">Try checking for spelling variants or pre-authorizing a new profile slot.</p>
+          </div>
+        ) : (
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50 text-xs font-semibold uppercase tracking-wider text-gray-500 border-b border-gray-100">
+                <th className="px-6 py-4">Authorized Full Name</th>
+                <th className="px-6 py-4">M-Pesa Telephone</th>
+                <th className="px-6 py-4">Clearance Role</th>
+                <th className="px-6 py-4 text-right">System ID Timestamp</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
+              {filteredMembers.map((member) => (
+                <tr key={member.id} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-6 py-4 font-semibold text-gray-900">{member.full_name}</td>
+                  <td className="px-6 py-4 font-mono text-gray-600">{member.phone_number}</td>
+                  <td className="px-6 py-4">
+                    {member.role === 'admin' ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-100">
+                        <ShieldAlert className="h-3.5 w-3.5" />
+                        Administrator
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Regular Member
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-right font-mono text-xs text-gray-400">
+                    {member.joined_at ? new Date(member.joined_at).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    }) : 'Pending'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
   );
-};
-
-export default MembersList;
+}

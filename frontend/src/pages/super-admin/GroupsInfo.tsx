@@ -1,195 +1,331 @@
-import React, { useState } from 'react';
-import Layout from '../../components/Layout';
-import { Search, Trash2, Users, Info, X, AlertTriangle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabaseClient';
+import { Layers, PlusCircle, RefreshCw, UserCheck, Building, Trash2, X, AlertTriangle } from 'lucide-react';
 
-const GroupsInfo = () => {
-  const [selectedGroup, setSelectedGroup] = useState<any>(null);
-  
-  // NEW STATE: Tracks the group ID about to be deleted.
-  // When this is null, the modal is closed.
-  const [groupToDelete, setGroupToDelete] = useState<number | null>(null);
+interface AdminDropdownOption {
+  id: string;
+  full_name: string;
+}
 
-  // Mock data expanded with descriptions and members
-  const [groups, setGroups] = useState([
-    { 
-      id: 1, 
-      name: "Nairobi Tech Savings Group", 
-      membersCount: 24, 
-      admin: "Alice Wambui",
-      description: "A collective of software engineers saving for long-term investment in tech startups and real estate.",
-      members: [
-        { name: "David Kimani", email: "david@example.com", phone: "+254 711 000 111" },
-        { name: "Sarah Omolo", email: "sarah@example.com", phone: "+254 722 000 222" },
-        { name: "Kevin Mutua", email: "kevin@example.com", phone: "+254 733 000 333" }
-      ]
-    },
-    { 
-      id: 2, 
-      name: "Mombasa Traders Welfare", 
-      membersCount: 15, 
-      admin: "John Doe",
-      description: "Logistics and trade professionals focusing on short-term credit facilities for import/export duties.",
-      members: [
-        { name: "John Doe", email: "john@example.com", phone: "+254 744 000 444" }
-      ]
-    }
-  ]);
+interface GroupData {
+  id: string;
+  group_name: string;
+  created_at: string;
+  admin_name: string | null;
+}
 
-  // Updated function to open the custom modal instead of a prompt
-  const initiateDelete = (id: number) => {
-    setGroupToDelete(id);
-  };
+export default function GroupsInfo() {
+  // Creation Form States
+  const [groupName, setGroupName] = useState('');
+  const [selectedAdminId, setSelectedAdminId] = useState('');
+  const [formLoading, setFormLoading] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
-  // Function to finalize deletion
-  const finalizeDelete = () => {
-    if (groupToDelete) {
-      setGroups(groups.filter(g => g.id !== groupToDelete));
-      if (selectedGroup?.id === groupToDelete) setSelectedGroup(null);
-      setGroupToDelete(null); // Close the modal
+  // Table Data & Loading States
+  const [adminsList, setAdminsList] = useState<AdminDropdownOption[]>([]);
+  const [groups, setGroups] = useState<GroupData[]>([]);
+  const [tableLoading, setTableLoading] = useState(true);
+
+  // MODAL STATES: Tracks the specific group object selected for deletion
+  const [activeDeleteTarget, setActiveDeleteTarget] = useState<GroupData | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  const fetchAvailableAdmins = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('role', 'admin')
+        .order('full_name', { ascending: true });
+
+      if (error) throw error;
+      setAdminsList(data || []);
+    } catch (err: any) {
+      console.error('Error fetching admin directory:', err.message);
     }
   };
 
-  // Function to find group name for modal
-  const getGroupToDeleteName = () => {
-    return groups.find(g => g.id === groupToDelete)?.name;
+  const fetchLiveGroups = async () => {
+    setTableLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('groups')
+        .select(`
+          id, 
+          group_name, 
+          created_at,
+          admin_id,
+          profiles!groups_admin_id_fkey ( full_name )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedGroups = (data || []).map((item: any) => ({
+        id: item.id,
+        group_name: item.group_name,
+        created_at: item.created_at,
+        admin_name: item.profiles ? item.profiles.full_name : 'Unassigned'
+      }));
+
+      setGroups(formattedGroups);
+    } catch (err: any) {
+      console.error('Error compiling group data:', err.message);
+    } finally {
+      setTableLoading(false);
+    }
+  };
+
+  // TARGETED DELETION ROUTINE: Targeted cleanly with .eq('id', targetId)
+  const executeGroupDeletion = async () => {
+    if (!activeDeleteTarget) return;
+    
+    setDeleteLoading(true);
+    const targetId = activeDeleteTarget.id;
+    
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .delete()
+        .eq('id', targetId); // Targets strictly the single unique UUID record
+
+      if (error) throw error;
+      
+      // Update UI filtering instantly matching out ONLY that ID
+      setGroups(prev => prev.filter(g => g.id !== targetId));
+      setActiveDeleteTarget(null); // Dismiss Modal safely
+    } catch (err: any) {
+      console.error('Database deletion failed:', err);
+      setStatus({ type: 'error', message: `Database rejected deletion: ${err.message}` });
+      setActiveDeleteTarget(null);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAvailableAdmins();
+    fetchLiveGroups();
+  }, []);
+
+  const handleCreateGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormLoading(true);
+    setStatus(null);
+
+    if (!groupName) {
+      setStatus({ type: 'error', message: 'Group Name parameter is explicitly required.' });
+      setFormLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('groups')
+        .insert([
+          {
+            group_name: groupName,
+            admin_id: selectedAdminId || null
+          }
+        ]);
+
+      if (error) throw error;
+
+      setStatus({ type: 'success', message: `Welfare Group "${groupName}" successfully configured!` });
+      setGroupName('');
+      setSelectedAdminId('');
+      fetchLiveGroups();
+    } catch (err: any) {
+      setStatus({ type: 'error', message: err.message || 'Failed to create group tenant.' });
+    } finally {
+      setFormLoading(false);
+    }
   };
 
   return (
-    <Layout role="super-admin">
-      <div className="max-w-7xl mx-auto flex gap-6">
-        {/* Main List Section */}
-        <div className={`transition-all duration-300 ${selectedGroup ? 'w-1/2' : 'w-full'}`}>
-          <header className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">Registered Groups</h1>
-            <p className="text-gray-500">Monitor and manage all welfare groups on the platform.</p>
-          </header>
-
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-100">
-                <tr>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">Group Name</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600">Members</th>
-                  <th className="px-6 py-4 text-sm font-semibold text-gray-600 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {groups.map((group) => (
-                  <tr 
-                    key={group.id} 
-                    className={`cursor-pointer transition-colors ${selectedGroup?.id === group.id ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
-                    onClick={() => setSelectedGroup(group)}
-                  >
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-gray-900">{group.name}</p>
-                      <p className="text-xs text-gray-500">Admin: {group.admin}</p>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600 text-sm">{group.membersCount}</td>
-                    <td className="px-6 py-4 text-right">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          initiateDelete(group.id); // Open custom modal
-                        }}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete Group"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+    <div className="space-y-8 mt-4 relative">
+      
+      {/* Upper Context Header */}
+      <div className="flex items-center space-x-3 border-b border-gray-200 pb-4">
+        <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+          <Layers className="h-7 w-7" />
         </div>
+        <div>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Group Tenant Directories</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Provision active global welfare clusters and bind structural administration mappings.</p>
+        </div>
+      </div>
 
-        {/* Detail Panel */}
-        {selectedGroup && (
-          <div className="w-1/2 bg-white rounded-3xl border border-gray-100 shadow-xl p-8 sticky top-8 h-fit animate-in slide-in-from-right-4 duration-300">
-            <div className="flex justify-between items-start mb-6">
-              <div className="bg-blue-100 p-3 rounded-2xl text-blue-600">
-                <Users size={24} />
-              </div>
-              <button 
-                onClick={() => setSelectedGroup(null)}
-                className="p-2 hover:bg-gray-100 rounded-full text-gray-400"
-              >
-                <X size={20} />
-              </button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Creation Input Panel */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center space-x-2 mb-6 text-gray-900">
+            <PlusCircle className="h-5 w-5 text-indigo-500" />
+            <h2 className="text-lg font-bold">Configure New Group</h2>
+          </div>
+
+          {status && (
+            <div className={`p-4 rounded-lg text-xs mb-4 ${status.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+              {status.message}
             </div>
+          )}
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedGroup.name}</h2>
-            
-            <div className="mb-8">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
-                <Info size={14} /> Description
-              </h3>
-              <p className="text-gray-600 leading-relaxed text-sm bg-gray-50 p-4 rounded-xl">
-                {selectedGroup.description}
-              </p>
+          <form onSubmit={handleCreateGroup} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Unique Group Name</label>
+              <div className="relative">
+                <Building className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  placeholder="e.g. Sherehe boys"
+                />
+              </div>
             </div>
 
             <div>
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Group Members</h3>
-              <div className="space-y-3">
-                {selectedGroup.members.map((m: any, idx: number) => (
-                  <div key={idx} className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-blue-100 transition-colors">
-                    <div>
-                      <p className="font-bold text-sm text-gray-900">{m.name}</p>
-                      <p className="text-xs text-gray-500">{m.email}</p>
-                    </div>
-                    <p className="text-xs font-mono text-gray-400">{m.phone}</p>
-                  </div>
-                ))}
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Assign Group Admin</label>
+              <div className="relative">
+                <UserCheck className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <select
+                  value={selectedAdminId}
+                  onChange={(e) => setSelectedAdminId(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                >
+                  <option value="">-- Choose Tenant Admin (Optional) --</option>
+                  {adminsList.map((admin) => (
+                    <option key={admin.id} value={admin.id}>
+                      {admin.full_name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
+
+            <button
+              type="submit"
+              disabled={formLoading}
+              className="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-sm font-medium tracking-wide shadow-sm transition-all disabled:opacity-50"
+            >
+              {formLoading ? 'Configuring System...' : 'Deploy Group Tenant'}
+            </button>
+          </form>
+        </div>
+
+        {/* Data Table View */}
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <h3 className="text-base font-bold text-gray-900">Active Tenant Registry Ledger</h3>
+            <button
+              onClick={() => { fetchAvailableAdmins(); fetchLiveGroups(); }}
+              className="p-1.5 border border-gray-200 rounded-md hover:bg-gray-100 text-gray-500 transition-colors"
+            >
+              <RefreshCw className={`h-4 w-4 ${tableLoading ? 'animate-spin text-indigo-500' : ''}`} />
+            </button>
           </div>
-        )}
+
+          <div className="overflow-x-auto">
+            {tableLoading ? (
+              <div className="text-center py-12 text-xs text-gray-400">Loading master platform data...</div>
+            ) : groups.length === 0 ? (
+              <div className="text-center py-12 text-xs text-gray-400">No active groups provisioned yet. Create one on the left panel.</div>
+            ) : (
+              <table className="w-full text-left text-sm">
+                <thead className="bg-gray-50 text-xs font-semibold uppercase text-gray-500 border-b border-gray-100">
+                  <tr>
+                    <th className="px-6 py-3">Welfare Group Title</th>
+                    <th className="px-6 py-3">Assigned Supervisor Admin</th>
+                    <th className="px-6 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-gray-700">
+                  {groups.map((group) => (
+                    <tr key={group.id} className="hover:bg-gray-50/30 transition-colors">
+                      <td className="px-6 py-4 font-bold text-gray-900">{group.group_name}</td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                          group.admin_name === 'Unassigned' 
+                            ? 'bg-amber-50 text-amber-700 border-amber-100' 
+                            : 'bg-indigo-50 text-indigo-700 border-indigo-100'
+                        }`}>
+                          {group.admin_name}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => setActiveDeleteTarget(group)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors"
+                          title="Delete Group"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* ========================================= */}
-      {/* CUSTOM DELETION CONFIRMATION MODAL CARD */}
-      {/* ========================================= */}
-      {groupToDelete !== null && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 w-full max-w-lg p-10 animate-in zoom-in duration-300">
-            <div className="flex flex-col items-center text-center">
-              {/* Critical Icon Section */}
-              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center text-red-600 mb-6 border-4 border-red-50">
-                <AlertTriangle size={40} />
+      {/* ====================================================================
+          PROFESSIONAL MODAL CARD OVERLAY (NO MORE BROWSER ALERTS!)
+         ==================================================================== */}
+      {activeDeleteTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-xl border border-gray-100 space-y-6 animate-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3 text-red-600">
+                <div className="p-2 bg-red-50 rounded-lg">
+                  <AlertTriangle className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-black text-gray-900">Confirm Destruction</h3>
               </div>
-
-              {/* Text Context */}
-              <h2 className="text-2xl font-extrabold text-gray-950 tracking-tight">System Confirmation Required</h2>
-              <p className="text-gray-600 mt-4 leading-relaxed px-2">
-                You are initiating the complete deletion of the group <strong className="text-red-700">{getGroupToDeleteName()}</strong>.
-              </p>
-              <p className="text-red-700 bg-red-50 font-bold p-4 rounded-2xl mt-6 text-sm flex items-center gap-2 border border-red-100">
-                <AlertTriangle size={16} /> This action cannot be undone, and all associated member access will be severed immediately.
-              </p>
-              
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-4 w-full mt-10 pt-8 border-t border-gray-100">
-                <button 
-                  onClick={() => setGroupToDelete(null)}
-                  className="w-full text-center py-4 rounded-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={finalizeDelete}
-                  className="w-full bg-red-600 text-white py-4 rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-100"
-                >
-                  Yes, Delete Entirely
-                </button>
-              </div>
+              <button 
+                onClick={() => setActiveDeleteTarget(null)}
+                className="p-1 text-gray-400 hover:bg-gray-50 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
+
+            {/* Modal Content Summary */}
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Are you absolutely sure you want to delete <span className="font-bold text-gray-900">"{activeDeleteTarget.group_name}"</span>? 
+                This action is irreversible and will un-link all sub-tenant connections immediately.
+              </p>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setActiveDeleteTarget(null)}
+                disabled={deleteLoading}
+                className="px-4 py-2 border border-gray-200 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeGroupDeletion}
+                disabled={deleteLoading}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-sm font-medium rounded-lg text-white shadow-sm transition-all disabled:opacity-50"
+              >
+                {deleteLoading ? 'Wiping record...' : 'Confirm Delete'}
+              </button>
+            </div>
+
           </div>
         </div>
       )}
-    </Layout>
-  );
-};
 
-export default GroupsInfo;
+    </div>
+  );
+}

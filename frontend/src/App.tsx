@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import SuperAdminLayout from './pages/super-admin/SuperAdminLayout';
 import SuperAdminDashboard from './pages/super-admin/Dashboard';
 import GroupsInfo from './pages/super-admin/GroupsInfo';
 import AdminsList from './pages/super-admin/AdminsList';
@@ -16,20 +17,20 @@ import AddMemberForm from './components/AddMemberForm';
 function App() {
   return (
     <Router>
-      {/* Container wrapper without the custom left sidebar spacing */}
-      <div className="h-screen w-screen overflow-hidden bg-gray-100">
-        
+      <div className="h-screen w-screen overflow-x-hidden overflow-y-auto bg-gray-100">
         <Routes>
           {/* Default root redirects straight to your main dashboard flow */}
           <Route path="/" element={<Navigate to="/super-admin" replace />} />
           
           {/* ==========================================
-              SUPER ADMIN ROUTES
+              SUPER ADMIN NESTED GROUP LAYOUT ROUTES
              ========================================== */}
-          <Route path="/super-admin" element={<SuperAdminDashboard />} />
-          <Route path="/super-admin/groups" element={<GroupsInfo />} />
-          <Route path="/super-admin/admins" element={<AdminsList />} />
-          <Route path="/super-admin/profile" element={<SuperAdminProfile />} />
+          <Route element={<SuperAdminLayout />}>
+            <Route path="/super-admin" element={<SuperAdminDashboard />} />
+            <Route path="/super-admin/groups" element={<GroupsInfo />} />
+            <Route path="/super-admin/admins" element={<AdminsList />} />
+            <Route path="/super-admin/profile" element={<SuperAdminProfile />} />
+          </Route>
           
           {/* ==========================================
               ADMIN CONTROL PANEL ROUTES
@@ -51,7 +52,6 @@ function App() {
           {/* Catch-all global wildcard redirect */}
           <Route path="*" element={<Navigate to="/super-admin" replace />} />
         </Routes>
-
       </div>
     </Router>
   );
