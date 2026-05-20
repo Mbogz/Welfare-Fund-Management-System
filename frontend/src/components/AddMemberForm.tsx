@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient'; // Adjust path based on your file structure
+import { supabase } from '../lib/supabaseclient';
 import { UserPlus, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function AddMemberForm() {
@@ -14,7 +14,6 @@ export default function AddMemberForm() {
     setLoading(true);
     setStatus(null);
 
-    // Basic Validation
     if (!fullName || !phoneNumber) {
       setStatus({ type: 'error', message: 'Please fill in all fields.' });
       setLoading(false);
@@ -22,13 +21,16 @@ export default function AddMemberForm() {
     }
 
     try {
-      // Generate a temporary UUID for pre-authorization since they haven't signed up via Auth yet
-      // In production, you can link this via an invite token or email flow
+      // FIX 2: Safe UUID Generator fallback if crypto.randomUUID is blocked by non-HTTPS environments
+      const targetId = typeof crypto !== 'undefined' && crypto.randomUUID 
+        ? crypto.randomUUID() 
+        : 'fallback-' + Math.random().toString(36).substring(2, 11) + '-' + Date.now();
+
       const { error } = await supabase
         .from('profiles')
         .insert([
           { 
-            id: crypto.randomUUID(), // Placeholder ID until actual auth sign up updates it
+            id: targetId,
             full_name: fullName, 
             phone_number: phoneNumber, 
             role: role 
