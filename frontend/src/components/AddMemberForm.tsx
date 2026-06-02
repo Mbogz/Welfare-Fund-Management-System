@@ -44,7 +44,7 @@ export default function AddMemberForm() {
         email: email.trim().toLowerCase(),
         options: {
           shouldCreateUser: true,
-          emailRedirectTo: window.location.origin + '/member/home' // Lands them straight onto their member dashboard layout
+          emailRedirectTo: window.location.origin + '/auth/setup' // Lands them straight onto their member dashboard layout
         }
       });
 

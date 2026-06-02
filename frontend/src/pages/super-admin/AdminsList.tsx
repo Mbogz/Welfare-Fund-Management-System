@@ -84,7 +84,7 @@ export default function AdminsList() {
         email: email.trim().toLowerCase(),
         options: {
           shouldCreateUser: true, // Auto-registers a secure auth slot upon initial magic link email click
-          emailRedirectTo: window.location.origin + '/admin' // Deep-links them straight into their control workspace layout
+          emailRedirectTo: window.location.origin + '/auth/setup' // Deep-links them straight into their control workspace layout
         }
       });
 
