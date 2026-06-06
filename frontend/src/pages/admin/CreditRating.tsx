@@ -1,31 +1,42 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseclient';
 
-const CreditRatings = () => {
+export default function CreditRating() {
   const [ratings, setRatings] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      const { data } = await supabase.from('credit_ratings').select('*');
-      setRatings(data || []);
+    const calculateRatings = async () => {
+      // 1. Get all members
+      const { data: members } = await supabase.from('profiles').select('id, full_name').eq('role', 'member');
+      // 2. Get all contributions
+      const { data: contribs } = await supabase.from('contributions').select('member_name, amount');
+      
+      const processed = members?.map(member => {
+        const memberContribs = contribs?.filter(c => c.member_name === member.full_name);
+        const totalPaid = memberContribs?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
+        
+        // Simple logic: Score is based on total paid vs a hypothetical target
+        const score = totalPaid > 10000 ? "Excellent" : totalPaid > 5000 ? "Good" : "Fair";
+        return { ...member, totalPaid, score };
+      });
+      setRatings(processed || []);
     };
-    fetchData();
+    calculateRatings();
   }, []);
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Credit Scores</h1>
-      <table className="w-full bg-white rounded-xl shadow-sm">
-        <tbody>
-          {ratings.map(m => (
-            <tr key={m.id} className="border-b">
-              <td className="px-6 py-4 font-bold">{m.member_name}</td>
-              <td className="px-6 py-4">{m.score}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <h2 className="text-2xl font-bold mb-6">Member Credit Scores</h2>
+      <div className="bg-white rounded-xl shadow-sm border">
+        {ratings.map(r => (
+          <div key={r.id} className="p-4 border-b flex justify-between">
+            <span>{r.full_name}</span>
+            <span className={`font-bold ${r.score === 'Excellent' ? 'text-green-600' : 'text-orange-600'}`}>
+              {r.score} (KES {r.totalPaid.toLocaleString()})
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
-};
-export default CreditRatings;
+}

@@ -11,6 +11,7 @@ const Contributions = () => {
   const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
+    // Fetch contributions
     const { data: contribs } = await supabase.from('contributions').select('*');
     setData(contribs || []);
     
@@ -26,7 +27,12 @@ const Contributions = () => {
   const handleSave = async () => {
     if (!selectedMember || !amount) return;
     setSaving(true);
-    await supabase.from('contributions').insert([{ member_name: selectedMember, amount: Number(amount) }]);
+    
+    await supabase.from('contributions').insert([{ 
+      member_name: selectedMember, 
+      amount: Number(amount) 
+    }]);
+    
     setSaving(false);
     setIsModalOpen(false);
     setSelectedMember("");
@@ -48,7 +54,10 @@ const Contributions = () => {
 
       <table className="w-full bg-white rounded-xl shadow-sm border">
         <thead className="bg-gray-50 border-b">
-          <tr><th className="text-left p-4">Member</th><th className="text-left p-4">Amount</th></tr>
+          <tr>
+            <th className="text-left p-4">Member</th>
+            <th className="text-left p-4">Amount</th>
+          </tr>
         </thead>
         <tbody>
           {data.map((m) => (

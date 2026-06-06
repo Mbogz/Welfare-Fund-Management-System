@@ -14,6 +14,16 @@ const SettingsHome = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Inside your component
+const [total, setTotal] = useState(0);
+
+useEffect(() => {
+  const fetchTotal = async () => {
+    const { data } = await supabase.rpc('get_total_group_contributions');
+    setTotal(data || 0);
+  };
+  fetchTotal();
+}, []);
 
   useEffect(() => {
     const loadSettings = async () => {
