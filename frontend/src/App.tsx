@@ -14,6 +14,7 @@ import AdminDashboard from './pages/admin/Dashboard';
 import MemberDashboard from './pages/member/Dashboard';
 import TransactionsPage from './pages/member/Transactions';
 import PaymentBotPage from './pages/member/PaymentBot'; 
+import MemberHomePage from './pages/member/Home'; 
 
 export default function App() {
   return (
@@ -56,6 +57,14 @@ export default function App() {
           } 
         />
         <Route
+          path="/member/home"
+          element={
+            <ProtectedRoute allowedRoles={['member', 'admin', 'super-admin']}>
+              <MemberHomePage />
+            </ProtectedRoute>
+          }
+        />
+         <Route
           path="/member/transactions"
           element={
             <ProtectedRoute allowedRoles={['member', 'admin', 'super-admin']}>
