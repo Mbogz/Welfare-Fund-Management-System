@@ -16,6 +16,7 @@ const SettingsHome = () => {
   const [deadline, setDeadline] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -56,7 +57,7 @@ const SettingsHome = () => {
 
     const { data: current } = await supabase.from('group_settings').select('id').maybeSingle();
     if (current) {
-      await supabase.from('group_settings').update({
+      const { error } = await supabase.from('group_settings').update({
         group_name: groupName,
         description,
         payment_type: paymentType,
@@ -66,15 +67,28 @@ const SettingsHome = () => {
         frequency,
         deadline
       }).eq('id', current.id);
-      alert("Settings updated!");
+      
+      setSaving(false);
+      if (!error) {
+        setStatusMessage("Settings updated successfully!");
+        setTimeout(() => setStatusMessage(null), 3000);
+      }
+    } else {
+      setSaving(false);
     }
-    setSaving(false);
   };
 
   if (loading) return <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto" /></div>;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20 p-6">
+      {/* Success Notification Card */}
+      {statusMessage && (
+        <div className="bg-green-100 border border-green-200 text-green-800 p-4 rounded-2xl font-bold text-center animate-in fade-in slide-in-from-top-2">
+          {statusMessage}
+        </div>
+      )}
+
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-black">System Settings</h1>
         <button onClick={handleSave} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold">
