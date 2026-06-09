@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseclient';
 import { Plus, X } from 'lucide-react';
 
-const Contributions = () => {
+const Transactions = () => {
   const [data, setData] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -11,11 +11,16 @@ const Contributions = () => {
   const [saving, setSaving] = useState(false);
 
   const fetchData = async () => {
-    // Fetch contributions
-    const { data: contribs } = await supabase.from('contributions').select('*');
-    setData(contribs || []);
+    // 1. Fetch transactions
+    const { data: transactions, error } = await supabase.from('transactions').select('*');
+    console.log("Raw Database Response:", { transactions, error });
+    if (error) {
+      console.error("Error fetching transactions:", error);
+    } else {
+      setData(transactions || []);
+    }
     
-    // Fetch members list for the dropdown
+    // 2. Fetch members list for the dropdown
     const { data: profiles } = await supabase.from('profiles').select('full_name').eq('role', 'member');
     setMembers(profiles || []);
   };
@@ -28,22 +33,31 @@ const Contributions = () => {
     if (!selectedMember || !amount) return;
     setSaving(true);
     
-    await supabase.from('contributions').insert([{ 
-      member_name: selectedMember, 
-      amount: Number(amount) 
+    // Ensure 'member_name' exists in your Supabase table 'transactions'
+    const { error: insertError } = await supabase.from('transactions').insert([{ 
+      member_name: selectedMember,
+      amount: Number(amount),
+      status: 'Completed' 
     }]);
+
+    if (insertError) {
+      console.error('Error saving transaction:', insertError);
+      alert("Failed to save. Ensure 'member_name' column exists in your table.");
+      setSaving(false);
+      return;
+    }
     
     setSaving(false);
     setIsModalOpen(false);
     setSelectedMember("");
     setAmount("");
-    fetchData();
+    fetchData(); // Refresh list
   };
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Group Contributions</h1>
+        <h1 className="text-2xl font-bold">Group Transactions</h1>
         <button 
           onClick={() => setIsModalOpen(true)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
@@ -62,8 +76,8 @@ const Contributions = () => {
         <tbody>
           {data.map((m) => (
             <tr key={m.id} className="border-b">
-              <td className="p-4">{m.member_name}</td>
-              <td className="p-4 font-bold text-blue-600">KES {m.amount.toLocaleString()}</td>
+              <td className="p-4">{m.member_name || "N/A"}</td>
+              <td className="p-4 font-bold text-blue-600">KES {Number(m.amount).toLocaleString()}</td>
             </tr>
           ))}
         </tbody>
@@ -109,4 +123,4 @@ const Contributions = () => {
   );
 };
 
-export default Contributions;
+export default Transactions;

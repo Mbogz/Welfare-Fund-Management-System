@@ -10,8 +10,8 @@ const MemberHome = () => {
     const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Replace 'get_user_contributions' with your specific database function/query
-        const { data } = await supabase.rpc('get_user_contributions', { p_user_id: user.id });
+        // Replace 'get_user_transactions' with your specific database function/query
+        const { data } = await supabase.rpc('get_user_transactions', { p_user_id: user.id });
         setBalance(data || 0);
       }
       setLoading(false);
@@ -24,7 +24,7 @@ const MemberHome = () => {
       <div className="p-6">
         <h1 className="text-2xl font-bold">My Personal Overview</h1>
         <div className="bg-white p-8 rounded-3xl border mt-6">
-          <p className="text-gray-500">Your Total Contributions</p>
+          <p className="text-gray-500">Your Total transactions</p>
           <p className="text-4xl font-black text-blue-600">KES {balance.toLocaleString()}</p>
         </div>
       </div>

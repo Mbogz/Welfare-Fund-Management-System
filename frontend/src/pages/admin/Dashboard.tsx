@@ -4,7 +4,7 @@ import Layout from '../../components/Layout';
 import SettingsHome from './SettingsHome';
 import Members from './Members';
 import AddMember from './AddMember';
-import Contributions from './Contributions';
+import Transactions from './Transactions';
 import CreditRating from './CreditRating';
 
 export default function AdminDashboard() {
@@ -14,7 +14,7 @@ export default function AdminDashboard() {
         <Route path="/" element={<SettingsHome />} />
         <Route path="/members" element={<Members />} />
         <Route path="/add-member" element={<AddMember />} />
-        <Route path="/contributions" element={<Contributions />} />
+        <Route path="/transactions" element={<Transactions />} />
         <Route path="/credit-rating" element={<CreditRating />} />
       </Routes>
     </Layout>

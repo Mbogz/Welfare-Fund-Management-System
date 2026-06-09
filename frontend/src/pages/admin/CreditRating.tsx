@@ -8,8 +8,8 @@ export default function CreditRating() {
     const calculateRatings = async () => {
       // 1. Get all members
       const { data: members } = await supabase.from('profiles').select('id, full_name').eq('role', 'member');
-      // 2. Get all contributions
-      const { data: contribs } = await supabase.from('contributions').select('member_name, amount');
+      // 2. Get all transactions
+      const { data: contribs } = await supabase.from('transactions').select('member_name, amount');
       
       const processed = members?.map(member => {
         const memberContribs = contribs?.filter(c => c.member_name === member.full_name);

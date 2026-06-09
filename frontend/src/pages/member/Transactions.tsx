@@ -13,9 +13,9 @@ const MemberTransactions = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // 2. Fetch only this user's contributions
+        // 2. Fetch only this user's transactions
         const { data, error } = await supabase
-          .from('contributions')
+          .from('transactions')
           .select('*')
           .eq('user_id', user.id) // Filter by the logged-in user
           .order('created_at', { ascending: false });
@@ -37,7 +37,7 @@ const MemberTransactions = () => {
       <div className="max-w-4xl mx-auto">
         <header className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Transaction History</h1>
-          <p className="text-gray-500">A detailed log of all your contributions.</p>
+          <p className="text-gray-500">A detailed log of all your transactions.</p>
         </header>
 
         <div className="space-y-4">

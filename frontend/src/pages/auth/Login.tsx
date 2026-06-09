@@ -68,7 +68,7 @@ export default function Login() {
             <LogIn className="h-8 w-8" />
           </div>
           <h1 className="text-2xl font-black text-gray-900 tracking-tight">Access Portal Gateway</h1>
-          <p className="text-sm text-gray-500">Sign in to manage your decentralized welfare contributions.</p>
+          <p className="text-sm text-gray-500">Sign in to manage your decentralized welfare transactions.</p>
         </div>
 
         {/* Dynamic Warning Alerts Container */}

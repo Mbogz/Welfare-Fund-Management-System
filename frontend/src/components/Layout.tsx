@@ -61,8 +61,8 @@ const Layout = ({ children, role }: { children: React.ReactNode, role: 'super-ad
               <Link to="/admin/add-member" className={`flex items-center gap-3 w-full p-3 rounded-xl font-medium ${isActive('/admin/add-member') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
                 <UserPlus size={20} /> Add Member
               </Link>
-              <Link to="/admin/contributions" className={`flex items-center gap-3 w-full p-3 rounded-xl font-medium ${isActive('/admin/contributions') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-                <Receipt size={20} /> Contributions
+              <Link to="/admin/transactions" className={`flex items-center gap-3 w-full p-3 rounded-xl font-medium ${isActive('/admin/transactions') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+                <Receipt size={20} /> Transactions
               </Link>
               <Link to="/admin/credit-rating" className={`flex items-center gap-3 w-full p-3 rounded-xl font-medium ${isActive('/admin/credit-rating') ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
                 <TrendingUp size={20} /> Credit Ratings

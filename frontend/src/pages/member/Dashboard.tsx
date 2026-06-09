@@ -11,7 +11,7 @@ const MemberDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       const { data: settings } = await supabase.from('group_settings').select('*').maybeSingle();
-      const { data: totalData } = await supabase.rpc('get_total_group_contributions');
+      const { data: totalData } = await supabase.rpc('get_total_group_transactions');
       
       setData(settings);
       setTotal(totalData || 0);
