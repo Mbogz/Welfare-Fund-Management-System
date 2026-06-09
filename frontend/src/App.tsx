@@ -12,6 +12,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import SuperAdminDashboard from './pages/super-admin/Dashboard'; 
 import AdminDashboard from './pages/admin/Dashboard';
 import MemberDashboard from './pages/member/Dashboard';
+import TransactionsPage from './pages/member/Transactions';
+import PaymentBotPage from './pages/member/PaymentBot'; 
 
 export default function App() {
   return (
@@ -46,12 +48,28 @@ export default function App() {
 
         {/* PROTECTED: Member Zone */}
         <Route 
-          path="/member/home" 
+          path="/member/*" 
           element={
             <ProtectedRoute allowedRoles={['member', 'admin', 'super-admin']}>
               <MemberDashboard />
             </ProtectedRoute>
           } 
+        />
+        <Route
+          path="/member/transactions"
+          element={
+            <ProtectedRoute allowedRoles={['member', 'admin', 'super-admin']}>
+              <TransactionsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/member/payment-bot"
+          element={
+            <ProtectedRoute allowedRoles={['member', 'admin', 'super-admin']}>
+              <PaymentBotPage />
+            </ProtectedRoute>
+          }
         />
 
         {/* Catch-all for non-existent routes */}
