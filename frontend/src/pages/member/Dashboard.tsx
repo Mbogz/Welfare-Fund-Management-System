@@ -10,7 +10,6 @@ const MemberDashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      // THIS IS THE LIVE FETCH
       const { data: settings } = await supabase.from('group_settings').select('*').maybeSingle();
       const { data: totalData } = await supabase.rpc('get_total_group_contributions');
       
@@ -26,7 +25,15 @@ const MemberDashboard = () => {
   return (
     <Layout role="member">
       <div className="max-w-4xl mx-auto space-y-6 p-6">
-        <h1 className="text-3xl font-black text-gray-900">Group Dashboard</h1>
+        {/* Logo and Group Title */}
+        <div className="flex flex-col items-center mb-8">
+          {data?.logo_url && (
+            <div className="w-32 h-32 mb-4 rounded-3xl overflow-hidden shadow-lg border-4 border-white">
+              <img src={data.logo_url} alt="Group Logo" className="w-full h-full object-cover" />
+            </div>
+          )}
+          <h1 className="text-3xl font-black text-gray-900">{data?.group_name || "Member Dashboard"}</h1>
+        </div>
 
         {/* Financial Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -42,16 +49,10 @@ const MemberDashboard = () => {
           </div>
         </div>
 
-        {/* Live Data Display */}
+        {/* Description Section */}
         <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm space-y-4">
-          <h2 className="text-2xl font-bold">{data?.group_name || "Loading..."}</h2>
-          <p className="text-gray-600">{data?.description}</p>
-          
-          <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 mt-4">
-             <p className="text-xs font-bold uppercase text-emerald-800">{data?.payment_type}</p>
-             <p className="text-xl font-bold text-emerald-900">{data?.payment_number}</p>
-             {data?.account_name && <p className="text-sm text-emerald-700">Account: {data?.account_name}</p>}
-          </div>
+          <h2 className="text-2xl font-bold text-gray-900">About the Group</h2>
+          <p className="text-gray-600 leading-relaxed">{data?.description}</p>
         </div>
       </div>
     </Layout>

@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabaseclient';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
 
 const SettingsHome = () => {
-  // All state variables
   const [groupName, setGroupName] = useState("");
   const [description, setDescription] = useState("");
   const [paymentType, setPaymentType] = useState("Paybill");
@@ -17,6 +16,32 @@ const SettingsHome = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadLogo = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setUploading(true);
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `logo-${Math.random()}.${fileExt}`;
+      
+      const { data, error } = await supabase.storage
+        .from('group-logos')
+        .upload(fileName, file);
+
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage.from('group-logos').getPublicUrl(fileName);
+      setLogoUrl(publicUrl);
+    } catch (error) {
+      alert("Error uploading image");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -24,12 +49,12 @@ const SettingsHome = () => {
       if (data) {
         setGroupName(data.group_name || "");
         setDescription(data.description || "");
+        setLogoUrl(data.logo_url || "");
         setPaymentType(data.payment_type || "Paybill");
         setTargetAmount(data.target_amount || "");
         setFrequency(data.frequency || "Monthly");
         setDeadline(data.deadline || "");
         
-        // Populate specific payment fields based on type
         if (data.payment_type === 'Paybill') {
           setPaybill(data.payment_number || "");
           setAccount(data.account_name || "");
@@ -60,6 +85,7 @@ const SettingsHome = () => {
       const { error } = await supabase.from('group_settings').update({
         group_name: groupName,
         description,
+        logo_url: logoUrl,
         payment_type: paymentType,
         payment_number: paymentValue,
         account_name: account,
@@ -82,9 +108,8 @@ const SettingsHome = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-20 p-6">
-      {/* Success Notification Card */}
       {statusMessage && (
-        <div className="bg-green-100 border border-green-200 text-green-800 p-4 rounded-2xl font-bold text-center animate-in fade-in slide-in-from-top-2">
+        <div className="bg-green-100 border border-green-200 text-green-800 p-4 rounded-2xl font-bold text-center animate-in fade-in">
           {statusMessage}
         </div>
       )}
@@ -94,6 +119,15 @@ const SettingsHome = () => {
         <button onClick={handleSave} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold">
           {saving ? "Saving..." : "Push Changes Live"}
         </button>
+      </div>
+
+      {/* Logo Upload Frame */}
+      <div 
+        onClick={() => fileInputRef.current?.click()}
+        className="w-48 h-48 mx-auto border-4 border-dashed border-gray-300 rounded-3xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 overflow-hidden bg-gray-50"
+      >
+        <input type="file" ref={fileInputRef} onChange={uploadLogo} className="hidden" accept="image/*" />
+        {uploading ? <Loader2 className="animate-spin" /> : logoUrl ? <img src={logoUrl} className="w-full h-full object-cover" /> : <Upload className="text-gray-400" />}
       </div>
 
       {/* Basic Info */}
