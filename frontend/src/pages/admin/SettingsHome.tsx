@@ -1,29 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseclient';
-import { Camera, Save, Loader2, Info, Phone, TrendingUp, Calendar } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const SettingsHome = () => {
+  // All state variables
   const [groupName, setGroupName] = useState("");
   const [description, setDescription] = useState("");
+  const [paymentType, setPaymentType] = useState("Paybill");
   const [paybill, setPaybill] = useState("");
   const [account, setAccount] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [tillNumber, setTillNumber] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [frequency, setFrequency] = useState("Monthly");
   const [deadline, setDeadline] = useState("");
-  const [logo, setLogo] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  // Inside your component
-const [total, setTotal] = useState(0);
-
-useEffect(() => {
-  const fetchTotal = async () => {
-    const { data } = await supabase.rpc('get_total_group_contributions');
-    setTotal(data || 0);
-  };
-  fetchTotal();
-}, []);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -31,25 +23,48 @@ useEffect(() => {
       if (data) {
         setGroupName(data.group_name || "");
         setDescription(data.description || "");
-        setPaybill(data.paybill || "");
-        setAccount(data.account_name || "");
+        setPaymentType(data.payment_type || "Paybill");
         setTargetAmount(data.target_amount || "");
         setFrequency(data.frequency || "Monthly");
         setDeadline(data.deadline || "");
-        setLogo(data.logo_url || null);
+        
+        // Populate specific payment fields based on type
+        if (data.payment_type === 'Paybill') {
+          setPaybill(data.payment_number || "");
+          setAccount(data.account_name || "");
+        } else if (data.payment_type === 'Buy Goods') {
+          setTillNumber(data.payment_number || "");
+        } else {
+          setPhoneNumber(data.payment_number || "");
+        }
       }
       setLoading(false);
     };
     loadSettings();
   }, []);
 
+  const validatePhone = (num: string) => /^(07|01)\d{8}$/.test(num);
+
   const handleSave = async () => {
+    if ((paymentType === 'Send Money' || paymentType === 'Pochi la Biashara') && !validatePhone(phoneNumber)) {
+      alert("Invalid Phone Number. Must be 10 digits starting with 07 or 01.");
+      return;
+    }
+
     setSaving(true);
+    const paymentValue = paymentType === 'Paybill' ? paybill : (paymentType === 'Buy Goods' ? tillNumber : phoneNumber);
+
     const { data: current } = await supabase.from('group_settings').select('id').maybeSingle();
     if (current) {
       await supabase.from('group_settings').update({
-        group_name: groupName, description, paybill, account_name: account,
-        target_amount: targetAmount, frequency, deadline, logo_url: logo
+        group_name: groupName,
+        description,
+        payment_type: paymentType,
+        payment_number: paymentValue,
+        account_name: account,
+        target_amount: targetAmount,
+        frequency,
+        deadline
       }).eq('id', current.id);
       alert("Settings updated!");
     }
@@ -62,7 +77,7 @@ useEffect(() => {
     <div className="max-w-4xl mx-auto space-y-6 pb-20 p-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-black">System Settings</h1>
-        <button onClick={handleSave} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2">
+        <button onClick={handleSave} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold">
           {saving ? "Saving..." : "Push Changes Live"}
         </button>
       </div>
@@ -73,16 +88,28 @@ useEffect(() => {
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} className="w-full mt-4 p-4 bg-gray-50 rounded-xl outline-none" placeholder="Description..." />
       </div>
 
-      {/* M-Pesa */}
-      <div className="bg-emerald-50 p-8 rounded-3xl border border-emerald-100 grid md:grid-cols-2 gap-4">
-        <div>
-          <label className="text-xs font-bold uppercase text-emerald-800">Paybill</label>
-          <input value={paybill} onChange={(e) => setPaybill(e.target.value)} className="w-full p-3 rounded-xl mt-1" />
-        </div>
-        <div>
-          <label className="text-xs font-bold uppercase text-emerald-800">Account Name</label>
-          <input value={account} onChange={(e) => setAccount(e.target.value)} className="w-full p-3 rounded-xl mt-1" />
-        </div>
+      {/* Payment Configuration */}
+      <div className="bg-emerald-50 p-8 rounded-3xl border border-emerald-100 space-y-4">
+        <h2 className="font-bold text-emerald-900">Payment Gateway Setup</h2>
+        <select value={paymentType} onChange={(e) => setPaymentType(e.target.value)} className="w-full p-3 rounded-xl border">
+          <option value="Paybill">Paybill</option>
+          <option value="Buy Goods">Buy Goods (Till Number)</option>
+          <option value="Send Money">Send Money (Phone Number)</option>
+          <option value="Pochi la Biashara">Pochi la Biashara</option>
+        </select>
+
+        {paymentType === 'Paybill' && (
+          <div className="grid md:grid-cols-2 gap-4">
+            <input value={paybill} onChange={(e) => setPaybill(e.target.value)} placeholder="Paybill Number" className="p-3 rounded-xl border" />
+            <input value={account} onChange={(e) => setAccount(e.target.value)} placeholder="Account Number" className="p-3 rounded-xl border" />
+          </div>
+        )}
+        {(paymentType === 'Send Money' || paymentType === 'Pochi la Biashara') && (
+          <input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="07xxxxxxxx" className="w-full p-3 rounded-xl border" />
+        )}
+        {paymentType === 'Buy Goods' && (
+          <input value={tillNumber} onChange={(e) => setTillNumber(e.target.value)} placeholder="Till Number" className="w-full p-3 rounded-xl border" />
+        )}
       </div>
 
       {/* Rules */}
